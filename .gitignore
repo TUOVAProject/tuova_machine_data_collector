@@ -1,0 +1,27 @@
+# Tunnukset ja paikalliset asetukset
+.env
+.env.*
+!.env.example
+config/mtc_config.yaml
+
+# Ajonaikaiset tiedostot
+logs/
+*.log
+*.log.[0-9]*
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Editori / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Omat luonnokset
+artikkelit/
+
+# Omat testit (simuloitu agentti)
+private/

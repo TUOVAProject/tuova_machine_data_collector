@@ -1,0 +1,22 @@
+services:
+  # MTConnect Processor - processes MTConnect data and writes to InfluxDB
+  mtc_processor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mtc_processor:local
+    container_name: mtc_processor
+    # Connection values for the ${VAR} placeholders in config/mtc_config.yaml (see .env.example)
+    env_file: .env
+    environment:
+      - POLL_INTERVAL=${POLL_INTERVAL:-15}
+      - RUN_ONCE=${RUN_ONCE:-}
+      - PROCESSOR_LOG_FILE=/app/logs/processor.log
+      - PROCESSOR_LOG_LEVEL=${PROCESSOR_LOG_LEVEL:-INFO}
+      - PROCESSOR_LOG_MAX_MB=${PROCESSOR_LOG_MAX_MB:-5}
+      - PROCESSOR_LOG_BACKUPS=${PROCESSOR_LOG_BACKUPS:-3}
+    command: ["python", "-m", "mtc_processor.runner"]
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+ 

@@ -1,0 +1,60 @@
+# Local test environment: a throwaway InfluxDB 2.7, a simulated MTConnect agent
+# serving the bundled sample (dev/fake_agent.py) and the processor polling it.
+# No external services or real credentials needed.
+#
+#   dev/test.sh          unit tests + smoke test
+#   dev/test.sh down     stop and delete the test data
+name: mtc-processor-test
+
+services:
+  influxdb:
+    image: influxdb:2.7
+    env_file: dev/test.env
+    ports:
+      - "${TEST_INFLUX_PORT:-8096}:8086"
+    volumes:
+      - influx-test-data:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 5s
+      retries: 20
+
+  # Changes a few fields of the sample on every read, like a running machine
+  fake_agent:
+    image: mtc_processor:local
+    init: true
+    command: ["python", "/app/dev/fake_agent.py"]
+    volumes:
+      - ./dev:/app/dev:ro
+      - ./MTConnect-sample:/app/MTConnect-sample:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost/health"]
+      interval: 2s
+      retries: 15
+
+  mtc_processor:
+    build: .
+    image: mtc_processor:local
+    init: true
+    env_file: dev/test.env
+    environment:
+      MTC_CONFIG: /app/config/mtc_config.example.yaml
+      RUN_ONCE: "0"
+      POLL_INTERVAL: "2"
+      PROCESSOR_LOG_FILE: /tmp/mtc/processor.log
+    command: ["python", "-m", "mtc_processor.runner"]
+    volumes:
+      # Sources mounted read-only: code changes are tested without rebuilding the image
+      - ./mtc_processor:/app/mtc_processor:ro
+      - ./config:/app/config:ro
+      - ./MTConnect-sample:/app/MTConnect-sample:ro
+      - ./tests:/app/tests:ro
+      - ./scripts:/app/scripts:ro
+    depends_on:
+      influxdb:
+        condition: service_healthy
+      fake_agent:
+        condition: service_healthy
+
+volumes:
+  influx-test-data:

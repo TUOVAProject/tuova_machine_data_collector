@@ -1,0 +1,82 @@
+# Example configuration. Copy to config/mtc_config.yaml for your own deployment;
+# config/mtc_config.yaml is not version controlled. The test environment
+# (docker-compose.test.yml) uses this file as is.
+#
+# Connection values are ${VAR} / ${VAR:-default} placeholders resolved from the
+# environment (.env), so addresses and the token stay out of this file.
+#
+# Derived from MTConnect-sample/Haas-current.xml
+# Device identity (used for tags; optional overrides)
+device_name: "Mazak"
+device_uuid: "MAZAK-SAMPLE-0001"
+
+ingest:
+  # Direct file path for MTConnect XML data (used only when url is empty)
+  sample_file: "/app/MTConnect-sample/Haas-current.xml"
+  # MTConnect agent endpoint, e.g. http://agent:5000/current.
+  # Takes priority over sample_file; leave MTC_AGENT_URL empty to read the file.
+  url: "${MTC_AGENT_URL:-}"
+  timeout_seconds: 5
+
+# InfluxDB settings
+influx:
+  enabled: true
+  url: "${INFLUX_URL:-http://influxdb:8086}"
+  org: "${INFLUX_ORG:-}"
+  bucket: "${INFLUX_BUCKET:-MACHINE_DATA}"
+  token: "${INFLUX_TOKEN:-}"
+  # Rows kept in memory (about 1 KB each) while InfluxDB cannot be reached; written
+  # when it answers again. The sample machine changes at most ~10 000 values an
+  # hour, so 50 000 rows cover an outage of several hours.
+  buffer_max_rows: 50000
+
+# Deduplication settings (top-level)
+dedupe:
+  enabled: true
+  snapshot_creation_time: true
+
+# Mapping of which MTConnect `name` values should be treated as numeric metrics
+# vs status signals. (Falls back to XML element when `name` is missing.)
+mapping:
+  numeric_elements:
+    - Cload
+    - Fact
+    - Fovr
+    - Frapidovr
+    - PartCountAct
+    - S2load
+    - S2rpm
+    - S2temp
+    - Sload
+    - Sovr
+    - Srpm
+    - Stemp
+    - Tool_group
+    - Tool_number
+    - Xload
+    - Yload
+    - Zload
+    - auto_time
+    - cut_time
+    - total_time
+    - total_auto_cut_time
+  status_elements:
+    - avail
+    - comms_cond
+    - coolant_cond
+    - doorstate
+    - electric_cond
+    - estop
+    - execution
+    - functionalmode
+    - hydra_cond
+    - logic_cond
+    - lubrication_cond
+    - mode
+    - motion_cond
+    - path_system
+    - pneu_cond
+    - program
+    - servo_cond
+    - spindle_cond
+    - system_cond
